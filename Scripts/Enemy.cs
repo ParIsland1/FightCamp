@@ -15,7 +15,11 @@ public class Enemy : MonoBehaviour
     public bool isBlocking;
     public bool headKicking;
     public bool heavyPunching;
-    
+    public bool jabbing;
+    public bool isAttacking;
+    public float cooldown = 2f;
+    private float lastAttackedAt = -9999f;
+
     public Transform player;
     
     public float distanceToMaintain;
@@ -24,8 +28,12 @@ public class Enemy : MonoBehaviour
     public float changeDistanceInterval = 5.0f;
     public float responseDelay = 2.0f;
     public bool playerIsMoving;
-    public float attackChance = 0.5f;
-    public bool isAttacking;
+    public float jabAttackChance = 0.5f;
+    public float powerAttackChance = 0.35f;
+    public float kickAttackChance = 0.15f;
+    public bool isMoving;
+    
+    
 
     // Start is called before the first frame update
     private void Start()
@@ -38,11 +46,17 @@ public class Enemy : MonoBehaviour
         distanceToMaintain = Random.Range(minDistance, maxDistance);
         StartCoroutine(ChangeDistanceRoutine());
         playerIsMoving = false;
-        isAttacking = false;
+        
+
     }
 
     public void Update()
   {
+
+        headKicking = false;
+        heavyPunching = false;
+        jabbing = false;
+
         if (Input.GetKeyDown("d"))
         {
             playerIsMoving = true;
@@ -70,18 +84,18 @@ public class Enemy : MonoBehaviour
             // Calculate the desired position based on the desired distance
             Vector3 targetPosition = player.position - direction * distanceToMaintain;
 
-         
+            // Move the AI towards the desired position
             transform.position = Vector3.MoveTowards(transform.position, targetPosition, enemyStatSheet.speed * Time.deltaTime);
 
-          
+            // Optionally, you can also flip the AI's sprite to face the player
             if (direction.x < 0)
             {
-                
+                // AI is to the left of the player, flip the sprite to face right
                 transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
             }
             else if (direction.x > 0)
             {
-                
+                // AI is to the right of the player, flip the sprite to face left
                 transform.localScale = new Vector3(-Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
             }
             if (playerIsMoving == true)
@@ -89,11 +103,59 @@ public class Enemy : MonoBehaviour
                 // Apply the delay before AI starts following
                 StartCoroutine(DelayedMove(targetPosition, responseDelay));
             }
+            if (transform.position != targetPosition)
+            {
+                isMoving = true; // AI is moving
+            }
+            else
+            {
+                isMoving = false; // AI is not moving
+            }
+            if (isMoving == true)
+            {
+                anim.Play("KarateWalk");
+            } 
         }
-        if (distanceToMaintain < 3.0f && Random.value <= attackChance && isAttacking == false)
+        //Distance from player
+        float actualDistance = Vector3.Distance(player.position, transform.position);
+        
+        if (actualDistance < 3.0f && Random.value <= jabAttackChance)
         {
-            Jab();
-            isAttacking = true;
+            while (Time.time > lastAttackedAt + cooldown)
+            {
+                jabbing = true;
+                Jab();
+                anim.Play("KarateJab");
+                lastAttackedAt += cooldown;
+                isAttacking = true;
+                
+            }
+        }
+        if (actualDistance < 3.0f && Random.value <= powerAttackChance)
+        {
+            heavyPunching = true;
+            while (Time.time > lastAttackedAt + cooldown)
+            {
+                
+                PowerHand();
+                anim.Play("KaratePowerHand");
+                lastAttackedAt += cooldown;
+                isAttacking = true;
+               
+            }
+        }
+        if (actualDistance < 3.0f && Random.value <= kickAttackChance)
+        {
+            headKicking = true;
+            while (Time.time > lastAttackedAt + cooldown)
+            {
+                
+                LeadLegHeadKick();
+                anim.Play("KarateLeadLegHeadKick");
+                lastAttackedAt += cooldown;
+                isAttacking = true;
+                
+            }
         }
     }
 
@@ -114,11 +176,9 @@ public class Enemy : MonoBehaviour
     public void Jab()
     {
         Collider2D[] hitPlayer = Physics2D.OverlapCircleAll(EnemyAttackPoint.position, attackRange, playerLayers);
-
         foreach (Collider2D player in hitPlayer)
         {
             player.GetComponent<PlayerController>().TakeDamage(enemyStatSheet.handsDamage);
-            anim.Play("KarateJab");
         }
     }
     public void PowerHand()
@@ -127,7 +187,7 @@ public class Enemy : MonoBehaviour
 
         foreach (Collider2D player in hitPlayer)
         {
-            player.GetComponent<PlayerController>().TakeDamage(enemyStatSheet.handsDamage);
+            player.GetComponent<PlayerController>().TakeDamage(enemyStatSheet.handsDamage * 3);
         }
     }
     public void LeadLegHeadKick()
@@ -136,7 +196,7 @@ public class Enemy : MonoBehaviour
 
         foreach (Collider2D player in hitPlayer)
         {
-            player.GetComponent<PlayerController>().TakeDamage(enemyStatSheet.kickDamage);
+            player.GetComponent<PlayerController>().TakeDamage(enemyStatSheet.kickDamage * 2);
         }
     }
 
@@ -162,15 +222,16 @@ public class Enemy : MonoBehaviour
 
 public void TakeDamage(int damage)
     {
+        //calculate damage
         if(isBlocking == true)
         {
-            
+            damage = 0;
         } else
         {
             enemyStatSheet.currentHealth -= damage;
         }
         
-
+        //Play animations
         if (playerControl.headKicking == true)
         {
             
@@ -191,7 +252,7 @@ public void TakeDamage(int damage)
     }
     void Defeated()
     {
-        //anim.Play("Knockout")
+        anim.Play("KarateKnockedOut");
         Debug.Log("Opponet defeated");
 
         anim.SetBool("isDefeated", true);

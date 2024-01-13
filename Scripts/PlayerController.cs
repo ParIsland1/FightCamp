@@ -16,6 +16,7 @@ public class PlayerController : MonoBehaviour
     public bool headKicking;
     public bool heavyPunching;
     public bool isBlocking;
+    public bool jabbing;
     public Animator anim;
 
 
@@ -43,6 +44,7 @@ public class PlayerController : MonoBehaviour
         if (Input.GetKeyDown("mouse 0"))
         {
             Jab();
+            jabbing = true;
         }
         if (Input.GetKeyDown("mouse 1"))
         {
@@ -120,16 +122,17 @@ public class PlayerController : MonoBehaviour
     }
     public void TakeDamage(int damage)
     {
+        //calculate damage
         if (isBlocking == true)
         {
-
+            damage = 0;
         }
         else
         {
             fighterStatSheet.currentHealth -= damage;
         }
 
-
+        //Play animations
         if (enemy.headKicking == true)
         {
 

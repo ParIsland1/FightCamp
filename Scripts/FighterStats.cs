@@ -11,6 +11,7 @@ public class FighterStats : MonoBehaviour
     public int currentHealth;
     public int recoveryRate = 10;
     public int speed = 2;
+    //public int currentSpeed;
     //Fighter personality stats:
     public bool goodGuy = true;
     public int fans;
@@ -20,12 +21,20 @@ public class FighterStats : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        //currentSpeed = speed;
     }
 
     // Update is called once per frame
     void Update()
     {
         
+        //if (Input.GetKeyDown("shift"))
+       // {
+           // currentSpeed = speed * 2;
+       // }
+        //if (Input.GetKeyUp("shift"))
+       // {
+           // currentSpeed = speed;
+       // }
     }
 }
