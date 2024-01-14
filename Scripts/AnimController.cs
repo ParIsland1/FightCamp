@@ -21,6 +21,7 @@ public class AnimController : MonoBehaviour
         //Play Jab Animation
         if (Input.GetKeyDown("mouse 0"))
         {
+            //anim.SetTrigger("Jabbing")
             anim.Play("KarateJab");
         }
         //Play Block Animation
